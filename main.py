@@ -1,5 +1,6 @@
 import time
 import requests
+print("MAIN DOSYASI ÇALIŞTI")
 # Telegram
 BOT_TOKEN = "8881582255:AAGDldtAsDtJ-2m7MWDeQW8RWG6KeDAs8_A"
 CHAT_ID = "-1004346379498"
@@ -134,19 +135,19 @@ def check_market():
 
 
 def main():
-
+    print("MAIN ÇALIŞTI")
     telegram("🚀 Funding Bot başlatıldı.")
 
     while True:
-
         try:
+            print("check_market çağrılıyor")
             check_market()
-
         except Exception as e:
-            print("Hata:", e)
+            print("Hata:", repr(e))
 
         time.sleep(CHECK_INTERVAL)
 
 
+print("BOT BAŞLIYOR")
 if __name__ == "__main__":
     main()
