@@ -1,6 +1,13 @@
 import time
 import requests
-from config import *
+# Telegram
+BOT_TOKEN = "8881582255:AAGDldtAsDtJ-2m7MWDeQW8RWG6KeDAs8_A"
+CHAT_ID = "-1004346379498"
+
+# Filtreler
+FUNDING_LIMIT = -0.001      # -0.10%
+PRICE_CHANGE_LIMIT = 5.0    # %5
+CHECK_INTERVAL = 300
 
 TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
