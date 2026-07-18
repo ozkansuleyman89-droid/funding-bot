@@ -96,6 +96,15 @@ print(f"Funding: {len(funding)}")
 print(f"Ticker: {len(ticker)}")
 
     for symbol in funding:
+        print(
+    symbol,
+    "Funding:", current_funding,
+    "Eski:", previous_funding,
+    "Değişim:", funding_change,
+    "Fiyat:", price_change
+        )
+        if current_funding <= -0.003:
+    print(symbol, current_funding, funding_change, price_change)
 
         if symbol not in ticker:
             continue
