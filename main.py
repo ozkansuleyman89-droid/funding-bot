@@ -85,8 +85,15 @@ def check_market():
 
     global old_funding
 
-    funding = funding_data()
-    ticker = ticker_data()
+    print("A")
+funding = funding_data()
+print("B")
+
+ticker = ticker_data()
+print("C")
+
+print(f"Funding: {len(funding)}")
+print(f"Ticker: {len(ticker)}")
 
     for symbol in funding:
 
