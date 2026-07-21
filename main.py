@@ -1,23 +1,13 @@
 import time
 import requests
-print("MAIN DOSYASI ÇALIŞTI")
-# Telegram
-BOT_TOKEN = "8881582255:AAGDldtAsDtJ-2m7MWDeQW8RWG6KeDAs8_A"
-CHAT_ID = "-1004346379498"
 
-# Filtreler
-FUNDING_LIMIT = -0.001      # -0.10%
-PRICE_CHANGE_LIMIT = 5.0    # %5
-CHECK_INTERVAL = 300
+from config import *
 
 TELEGRAM_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-BINANCE_PREMIUM = "https://fapi.binance.com/fapi/v1/premiumIndex"
-BINANCE_TICKER = "https://fapi.binance.com/fapi/v1/ticker/24hr"
-
+price_history = {}
+volume_history = {}
 last_alert = {}
-old_funding = {}
-
 
 def telegram(text):
     try:
@@ -27,42 +17,17 @@ def telegram(text):
                 "chat_id": CHAT_ID,
                 "text": text
             },
-            timeout=15
+            timeout=10
         )
     except Exception as e:
-        print(e)
+        print("Telegram Hatası:", e)
 
 
-def funding_data():
+def market_data():
 
-    r = requests.get(BINANCE_PREMIUM, timeout=20)
+    url = "https://fapi.binance.com/fapi/v1/ticker/24hr"
 
-    data = r.json()
-
-    result = {}
-
-    for coin in data:
-
-        try:
-
-            symbol = coin["symbol"]
-
-            funding = float(coin["lastFundingRate"])
-
-            result[symbol] = funding
-
-        except:
-
-            pass
-
-    return result
-
-
-def ticker_data():
-
-    r = requests.get(BINANCE_TICKER, timeout=20)
-
-    data = r.json()
+    data = requests.get(url, timeout=20).json()
 
     result = {}
 
@@ -72,98 +37,104 @@ def ticker_data():
 
             symbol = coin["symbol"]
 
-            change = float(coin["priceChangePercent"])
+            if not symbol.endswith("USDT"):
+                continue
 
-            result[symbol] = change
+            price = float(coin["lastPrice"])
+
+            volume = float(coin["quoteVolume"])
+
+            result[symbol] = {
+                "price": price,
+                "volume": volume
+            }
 
         except:
-
             pass
-          
+
     return result
+
+
 def check_market():
 
-    global old_funding
+    global price_history
+    global volume_history
+    global last_alert
 
-    print("A")
-funding = funding_data()
-print("B")
+    market = market_data()
 
-ticker = ticker_data()
-print("C")
+    now = time.time()
 
-print(f"Funding: {len(funding)}")
-print(f"Ticker: {len(ticker)}")
+    for symbol in market:
 
-    for symbol in funding:
-        print(
-    symbol,
-    "Funding:", current_funding,
-    "Eski:", previous_funding,
-    "Değişim:", funding_change,
-    "Fiyat:", price_change
-        )
-        if current_funding <= -0.003:
-    print(symbol, current_funding, funding_change, price_change)
+        price = market[symbol]["price"]
+        volume = market[symbol]["volume"]
 
-        if symbol not in ticker:
+        if symbol not in price_history:
+
+            price_history[symbol] = []
+
+            volume_history[symbol] = []
+
+        price_history[symbol].append((now, price))
+
+        volume_history[symbol].append((now, volume))
+
+        while price_history[symbol] and now - price_history[symbol][0][0] > LOOKBACK_MINUTES * 60:
+
+            price_history[symbol].pop(0)
+
+        while volume_history[symbol] and now - volume_history[symbol][0][0] > LOOKBACK_MINUTES * 60:
+
+            volume_history[symbol].pop(0)
+
+        if len(price_history[symbol]) < 2:
             continue
 
-        current_funding = funding[symbol]
-        price_change = ticker[symbol]
+        old_price = price_history[symbol][0][1]
 
-        previous_funding = old_funding.get(symbol, current_funding)
-        funding_change = current_funding - previous_funding
+        old_volume = volume_history[symbol][0][1]
 
-        # Son funding değerini kaydet
-        old_funding[symbol] = current_funding
+        price_change = ((price - old_price) / old_price) * 100
 
-        # Funding yeterince negatif değilse geç
-        if current_funding > FUNDING_LIMIT:
-            continue
+        volume_change = volume / old_volume
 
-        # Fiyat yeterince yükselmemişse geç
         if price_change < PRICE_CHANGE_LIMIT:
             continue
 
-        # Funding daha negatife gitmemişse geç
-        if funding_change >= 0:
+        if volume_change < VOLUME_INCREASE:
             continue
 
-        now = time.time()
-
-        # Aynı coin için 1 saat içinde tekrar bildirim gönderme
         if symbol in last_alert:
+
             if now - last_alert[symbol] < 3600:
                 continue
 
+        last_alert[symbol] = now
+
         message = (
-            "🚨 FUNDING ALARMI 🚨\n\n"
-            f"Coin: {symbol}\n"
-            f"Funding: {current_funding*100:.4f}%\n"
-            f"Önceki Funding: {previous_funding*100:.4f}%\n"
-            f"Değişim: {funding_change*100:.4f}%\n"
-            f"24 Saat: %{price_change:.2f}"
+            f"🚀 GÜÇLÜ YÜKSELİŞ\n\n"
+            f"🪙 {symbol}\n\n"
+            f"📈 {LOOKBACK_MINUTES} dk: %{price_change:.2f}\n"
+                        f"📊 Hacim Artışı: x{volume_change:.2f}\n"
+            f"💰 Fiyat: {price}\n"
         )
 
         telegram(message)
-        last_alert[symbol] = now
+
+        print(message)
 
 
-def main():
-    print("MAIN ÇALIŞTI")
-    telegram("🚀 Funding Bot başlatıldı.")
+print("BOT BAŞLADI")
 
-    while True:
-        try:
-            print("check_market çağrılıyor")
-            check_market()
-        except Exception as e:
-            print("Hata:", repr(e))
+while True:
 
-        time.sleep(CHECK_INTERVAL)
+    try:
 
+        check_market()
 
-print("BOT BAŞLIYOR")
-if __name__ == "__main__":
-    main()
+    except Exception as e:
+
+        print("HATA:", e)
+
+    time.sleep(CHECK_INTERVAL)
