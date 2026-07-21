@@ -1,3 +1,4 @@
+raise Exception("YENI MAIN CALISTI")
 import json
 import websocket
 import requests
