@@ -1,8 +1,7 @@
-# Telegram
 BOT_TOKEN = "8881582255:AAGDldtAsDtJ-2m7MWDeQW8RWG6KeDAs8_A"
 CHAT_ID = "-1004346379498"
 
-# Filtreler
-FUNDING_LIMIT = -0.001      # -0.10%
-PRICE_CHANGE_LIMIT = 5.0    # %5
-CHECK_INTERVAL = 300
+PRICE_CHANGE_LIMIT = 5.0      # %5
+CHECK_INTERVAL = 300          # 5 dakika
+LOOKBACK_MINUTES = 30         # 30 dakika
+VOLUME_INCREASE = 1.20        # %20 hacim artışı
